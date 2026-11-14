@@ -1,0 +1,2126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090c14">
+  <title>To the Moon... — A different perspective</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ink: #f0eee8;
+      --muted: #a4a4a3;
+      --line: rgb(255 255 255 / 13%);
+      --glass: rgb(13 15 21 / 67%);
+      --gold: #efc889;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+
+    body {
+      background: #090c14;
+      color: var(--ink);
+      letter-spacing: .01em;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    #scene:active { cursor: grabbing; }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 27px 32px;
+      pointer-events: none;
+    }
+
+    .brand, .live, .panel, .hint, .compass { pointer-events: auto; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgb(239 200 137 / 55%);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--gold);
+      font-size: 15px;
+    }
+
+    .brand-name {
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: .08em;
+    }
+
+    .brand-caption {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .08em;
+    }
+
+    .live {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgb(8 11 17 / 34%);
+      color: #d3d1ca;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
+    }
+
+    .live::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #a9cbb4;
+      content: "";
+      box-shadow: 0 0 12px rgb(169 203 180 / 65%);
+    }
+
+    .orbit-card {
+      position: fixed;
+      top: 91px;
+      left: 32px;
+      width: 230px;
+      padding: 12px 13px 10px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: rgb(13 15 21 / 64%);
+      box-shadow: 0 12px 36px rgb(0 0 0 / 16%);
+      backdrop-filter: blur(12px);
+      pointer-events: none;
+    }
+
+    .orbit-card-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      color: #d7d4ce;
+      font-size: 8px;
+      font-weight: 650;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .orbit-card-heading span:last-child {
+      color: #86868b;
+      font-size: 7px;
+      font-weight: 500;
+      letter-spacing: .08em;
+    }
+
+    .orbit-diagram {
+      display: block;
+      width: 100%;
+      height: 94px;
+      margin-top: 5px;
+      overflow: visible;
+    }
+
+    .orbit-path {
+      fill: none;
+      stroke: rgb(255 255 255 / 24%);
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+    }
+
+    .orbit-connector {
+      stroke: rgb(239 200 137 / 40%);
+      stroke-width: .8;
+    }
+
+    .orbit-label {
+      fill: #d8d5ce;
+      font: 7px Inter, system-ui, sans-serif;
+      letter-spacing: .08em;
+    }
+
+    .orbit-caption {
+      fill: #85858b;
+      font: 6px Inter, system-ui, sans-serif;
+      letter-spacing: .04em;
+    }
+
+    .panel {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: min(334px, calc(100vw - 32px));
+      max-height: calc(100vh - 150px);
+      overflow-y: auto;
+      padding: 15px 16px 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--glass);
+      box-shadow: 0 16px 55px rgb(0 0 0 / 22%);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel.power-mode { width: min(660px, calc(100vw - 32px)); }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 11px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin: 0 0 13px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgb(0 0 0 / 16%);
+    }
+
+    .tab {
+      min-height: 31px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: #a4a4a3;
+      font: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .tab[aria-selected="true"] {
+      border-color: rgb(255 255 255 / 13%);
+      background: rgb(255 255 255 / 8%);
+      color: #f0eee8;
+    }
+
+    .tab:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+
+    [role="tabpanel"][hidden] { display: none; }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    #timeReadout {
+      color: var(--gold);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .08em;
+    }
+
+    .range-wrap { position: relative; padding: 4px 0 1px; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 16px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #dba95e 0%, #efc889 var(--fill, 66%), rgb(255 255 255 / 19%) var(--fill, 66%));
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 2px;
+      border-radius: 2px;
+      background: rgb(255 255 255 / 19%);
+    }
+
+    input[type="range"]::-moz-range-progress {
+      height: 2px;
+      border-radius: 2px;
+      background: #efc889;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 12px;
+      height: 12px;
+      margin-top: -5px;
+      appearance: none;
+      border: 2px solid #f3d9ae;
+      border-radius: 50%;
+      background: #17171a;
+      box-shadow: 0 0 0 4px rgb(239 200 137 / 13%);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 9px;
+      height: 9px;
+      border: 2px solid #f3d9ae;
+      border-radius: 50%;
+      background: #17171a;
+      box-shadow: 0 0 0 4px rgb(239 200 137 / 13%);
+    }
+
+    .day-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: #888b91;
+      font-size: 9px;
+      letter-spacing: .04em;
+    }
+
+    .timeline-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    #timelineReadout {
+      color: #ddd6c9;
+      font-size: 9px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .timeline-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+    }
+
+    .timeline-controls input[type="range"] { flex: 1; }
+
+    .playback {
+      min-width: 62px;
+      padding: 6px 8px;
+      border: 1px solid rgb(255 255 255 / 19%);
+      border-radius: 6px;
+      background: rgb(8 11 17 / 35%);
+      color: #e6dfd2;
+      font: inherit;
+      font-size: 9px;
+      letter-spacing: .04em;
+      cursor: pointer;
+    }
+
+    .playback:hover, .playback:focus-visible {
+      border-color: rgb(239 200 137 / 55%);
+      color: var(--gold);
+    }
+
+    .divider { height: 1px; margin: 12px 0 10px; background: var(--line); }
+
+    .control-group { margin: 10px 0; }
+
+    .field-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #a4a4a3;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .field-control {
+      width: 100%;
+      min-height: 36px;
+      padding: 8px 10px;
+      border: 1px solid rgb(255 255 255 / 15%);
+      border-radius: 7px;
+      outline: none;
+      background: rgb(255 255 255 / 4%);
+      color: #edeae2;
+      font: inherit;
+      font-size: 11px;
+      color-scheme: dark;
+    }
+
+    .field-control:focus { border-color: rgb(239 200 137 / 70%); }
+
+    .coordinate-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 9px;
+    }
+
+    .coordinate-fields[hidden] { display: none; }
+    .coordinate-fields .field-control { min-height: 32px; }
+
+    .readings {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .reading-label {
+      margin-bottom: 5px;
+      color: #93949a;
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .reading-value {
+      color: #ebe8e1;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .reading-value .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin: 0 6px 1px 0;
+      border-radius: 50%;
+      background: #8fb8d7;
+      box-shadow: 0 0 9px rgb(143 184 215 / 60%);
+    }
+
+    .reading-value.sun .dot {
+      background: #f1c77f;
+      box-shadow: 0 0 9px rgb(241 199 127 / 60%);
+    }
+
+    .operational-readings {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid var(--line);
+      gap: 8px 10px;
+    }
+
+    .operational-readings .reading-label {
+      margin-bottom: 4px;
+      font-size: 8px;
+    }
+
+    .operational-readings .reading-value {
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .operational-wide { grid-column: 1 / -1; }
+
+    .power-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 16px;
+    }
+
+    .power-controls .control-group { min-width: 0; }
+
+    .range-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .range-value {
+      color: var(--gold);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: normal;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
+    .power-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgb(255 255 255 / 3%);
+    }
+
+    .power-summary .reading-value { font-size: 14px; }
+
+    .chart-wrap {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgb(3 5 10 / 25%);
+    }
+
+    #powerChart { display: block; width: 100%; height: 100%; }
+
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 9px;
+      color: #a4a4a3;
+      font-size: 9px;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+
+    .legend-swatch {
+      width: 12px;
+      height: 2px;
+      border-radius: 2px;
+      background: #efc889;
+    }
+
+    .legend-swatch.energy { background: #8fb8d7; }
+
+    .panel-foot {
+      margin-top: 10px;
+      color: #8e8f95;
+      font-size: 9px;
+      line-height: 1.55;
+    }
+
+    .ephemeris-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .ephemeris-status {
+      color: #a4a4a3;
+      font-size: 8px;
+      line-height: 1.5;
+    }
+
+    .ephemeris-status[data-state="ready"] { color: #acd7ba; }
+    .ephemeris-status[data-state="error"] { color: #e4a99e; }
+    .ephemeris-status[data-state="local"] { color: #efc889; }
+
+    .source-toggle {
+      flex: 0 0 auto;
+      padding: 2px 0;
+      border: 0;
+      background: transparent;
+      color: #c5b28e;
+      font: inherit;
+      font-size: 8px;
+      cursor: pointer;
+    }
+
+    .source-toggle:hover, .source-toggle:focus-visible { color: #f0d7aa; }
+
+    .model-note {
+      margin-top: 6px;
+      color: #73757b;
+      font-size: 8px;
+      line-height: 1.5;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 31px;
+      left: 32px;
+      color: rgb(233 231 225 / 69%);
+      font-size: 10px;
+      letter-spacing: .045em;
+      text-shadow: 0 1px 8px #000;
+    }
+
+    .hint span { color: rgb(233 231 225 / 43%); }
+
+    .compass {
+      position: fixed;
+      bottom: 75px;
+      left: 32px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #eeeae2;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-shadow: 0 1px 8px #000;
+    }
+
+    .compass-icon {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border: 1px solid rgb(255 255 255 / 23%);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 10px;
+    }
+
+    .reset {
+      margin-left: 5px;
+      padding: 5px 8px;
+      border: 1px solid rgb(255 255 255 / 19%);
+      border-radius: 6px;
+      background: rgb(8 11 17 / 35%);
+      color: #d2d0ca;
+      font: inherit;
+      letter-spacing: .05em;
+      cursor: pointer;
+    }
+
+    .reset:hover { border-color: rgb(239 200 137 / 55%); color: var(--gold); }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 19px 17px; }
+      .brand-caption { font-size: 9px; }
+      .live { padding: 8px 10px; font-size: 8px; }
+      .orbit-card { top: 78px; left: 17px; width: 200px; padding: 10px 11px 8px; }
+      .orbit-diagram { height: 82px; }
+      .panel { right: 12px; bottom: 12px; width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 145px); }
+      .panel.power-mode { width: min(560px, calc(100vw - 24px)); }
+      .power-controls { gap: 0 10px; }
+      .chart-wrap { height: 180px; }
+      .hint { bottom: 225px; left: 17px; font-size: 9px; }
+      .compass { bottom: 255px; left: 17px; }
+    }
+
+    @media (max-height: 510px) and (min-width: 601px) {
+      .panel { right: 20px; bottom: 16px; padding: 13px 15px 11px; max-height: calc(100vh - 115px); }
+      .divider { margin: 10px 0; }
+      .panel-foot { margin-top: 9px; }
+      .hint { bottom: 21px; left: 24px; }
+      .compass { bottom: 55px; left: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene" tabindex="0" aria-label="Interactive view from the lunar surface. Drag or use arrow keys to look around; scroll to zoom."></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">◒</div>
+      <div>
+        <div class="brand-name">To the Moon...</div>
+        <div class="brand-caption">A different perspective</div>
+      </div>
+    </div>
+    <div class="live" id="surfaceSideReadout">Lunar surface · Near side</div>
+  </header>
+
+  <aside class="orbit-card" aria-label="Schematic orbital positions of the Sun, Earth, and Moon">
+    <div class="orbit-card-heading">
+      <span>Orbital positions</span>
+      <span>Not to scale</span>
+    </div>
+    <svg class="orbit-diagram" viewBox="0 0 204 94" role="img" aria-label="Sun, Earth, and Moon positions in orbit">
+      <circle class="orbit-path" cx="92" cy="48" r="31"></circle>
+      <circle id="moonOrbit" class="orbit-path" cx="132" cy="48" r="14"></circle>
+      <line id="sunEarthLine" class="orbit-connector" x1="92" y1="48" x2="123" y2="48"></line>
+      <line id="earthMoonLine" class="orbit-connector" x1="123" y1="48" x2="137" y2="48"></line>
+      <circle cx="92" cy="48" r="5" fill="#f2c77f"></circle>
+      <circle id="orbitEarth" cx="123" cy="48" r="3.5" fill="#77add0"></circle>
+      <circle id="orbitMoon" cx="137" cy="48" r="2.5" fill="#e2e0da"></circle>
+      <text class="orbit-label" x="80" y="64">SUN</text>
+      <text class="orbit-label" id="orbitEarthLabel" x="113" y="32">EARTH</text>
+      <text class="orbit-label" id="orbitMoonLabel" x="139" y="65">MOON</text>
+      <text class="orbit-caption" x="7" y="89">Angles follow the current date · distances compressed</text>
+    </svg>
+  </aside>
+
+  <section class="compass" aria-label="View direction">
+    <div class="compass-icon">N</div>
+    <span id="headingReadout">N · 000°</span>
+    <button class="reset" id="resetView" type="button">Reset view</button>
+  </section>
+
+  <div class="hint">DRAG OR ARROWS TO LOOK <span>·</span> SCROLL TO ZOOM</div>
+
+  <section class="panel" aria-label="Lunar sky controls">
+    <div class="panel-heading">
+      <div class="eyebrow" id="panelTitle">Set your vantage point</div>
+      <span class="eyebrow">UTC</span>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Visualizer views">
+      <button class="tab" id="skyTabButton" type="button" role="tab" aria-selected="true" aria-controls="skyTab">Sky view</button>
+      <button class="tab" id="powerTabButton" type="button" role="tab" aria-selected="false" aria-controls="powerTab" tabindex="-1">Solar power</button>
+    </div>
+    <div id="skyTab" role="tabpanel" aria-labelledby="skyTabButton">
+    <div class="control-group">
+      <label class="field-label" for="landingSite">Landing site</label>
+      <select class="field-control" id="landingSite">
+        <option value="apollo11">Apollo 11 · Tranquility Base</option>
+        <option value="apollo12">Apollo 12 · Ocean of Storms</option>
+        <option value="apollo14">Apollo 14 · Fra Mauro</option>
+        <option value="apollo15">Apollo 15 · Hadley–Apennine</option>
+        <option value="apollo16">Apollo 16 · Descartes</option>
+        <option value="apollo17">Apollo 17 · Taurus–Littrow</option>
+        <option value="luna9">Luna 9 · Ocean of Storms</option>
+        <option value="chang'e4">Chang’e 4 · Von Kármán</option>
+        <option value="custom">Custom coordinates…</option>
+      </select>
+      <div class="coordinate-fields" id="customCoordinates" hidden>
+        <div>
+          <label class="field-label" for="latitude">Latitude °</label>
+          <input class="field-control" id="latitude" type="number" min="-90" max="90" step="0.001" value="0">
+        </div>
+        <div>
+          <label class="field-label" for="longitude">Longitude °</label>
+          <input class="field-control" id="longitude" type="number" min="-180" max="180" step="0.001" value="0">
+        </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="field-label" for="dateTime">Date &amp; time</label>
+      <input class="field-control" id="dateTime" type="datetime-local" value="1969-07-20T20:17" step="60">
+    </div>
+    <div class="control-group">
+      <div class="timeline-heading">
+        <label class="field-label" for="lunarTimeline">Scan one lunar day · hourly steps</label>
+        <output id="timelineReadout" for="lunarTimeline">T+0.0 d</output>
+      </div>
+      <div class="timeline-controls">
+        <input id="lunarTimeline" type="range" min="0" max="708" step="1" value="354" aria-label="Time offset across one lunar day in one-hour increments">
+        <button class="playback" id="playTimeline" type="button" aria-pressed="false">▶ Play</button>
+      </div>
+      <div class="day-labels"><span>−14.8 d</span><span>Landing time</span><span>+14.8 d</span></div>
+    </div>
+    <div class="divider"></div>
+    <div class="readings">
+      <div>
+        <div class="reading-label">Earth · altitude / azimuth</div>
+        <div class="reading-value"><span class="dot"></span><span id="earthPosition">—</span></div>
+      </div>
+      <div>
+        <div class="reading-label">Sun · altitude / azimuth</div>
+        <div class="reading-value sun"><span class="dot"></span><span id="sunPosition">—</span></div>
+      </div>
+    </div>
+    <div class="readings operational-readings" aria-label="Surface operations estimates">
+      <div>
+        <div class="reading-label">Sunlight</div>
+        <div class="reading-value" id="sunlightReadout">—</div>
+      </div>
+      <div>
+        <div class="reading-label">Estimated irradiance</div>
+        <div class="reading-value" id="irradianceReadout">—</div>
+      </div>
+      <div class="operational-wide">
+        <div class="reading-label">Earth contact</div>
+        <div class="reading-value" id="earthContactReadout">—</div>
+      </div>
+    </div>
+    <div class="panel-foot" id="siteReadout">Apollo 11 · 0.674° N, 23.473° E</div>
+    <div class="model-note" id="modelNote">Horizons sky positions are airless apparent coordinates for the lunar site. The orbital inset is illustrative; sunlight, terrain shadows, antenna pointing, and relay outages are simplified. Not for precision navigation.</div>
+    </div>
+    <div class="ephemeris-row">
+      <div class="ephemeris-status" id="ephemerisStatus" role="status" aria-live="polite" data-state="loading">Loading JPL Horizons positions…</div>
+      <button class="source-toggle" id="positionSourceToggle" type="button">Use local estimate</button>
+    </div>
+    <div id="powerTab" role="tabpanel" aria-labelledby="powerTabButton" hidden>
+      <div class="chart-wrap">
+        <canvas id="powerChart" role="img" aria-label="Solar panel output power and cumulative energy across one lunar day"></canvas>
+      </div>
+      <div class="chart-legend" aria-hidden="true">
+        <span class="legend-item"><span class="legend-swatch"></span>Power (W)</span>
+        <span class="legend-item"><span class="legend-swatch energy"></span>Cumulative energy (kWh)</span>
+      </div>
+      <div class="power-summary">
+        <div>
+          <div class="reading-label">Peak power</div>
+          <div class="reading-value" id="peakPower">—</div>
+        </div>
+        <div>
+          <div class="reading-label">Energy over 29.5 days</div>
+          <div class="reading-value" id="totalEnergy">—</div>
+        </div>
+      </div>
+      <div class="power-controls">
+        <div class="control-group">
+          <label class="field-label range-label" for="panelArea">
+            <span>Panel area</span><output class="range-value" id="panelAreaValue">1.0 m²</output>
+          </label>
+          <input id="panelArea" type="range" min="0.1" max="20" step="0.1" value="1" aria-label="Solar panel area in square meters">
+        </div>
+        <div class="control-group">
+          <label class="field-label range-label" for="panelEfficiency">
+            <span>Cell efficiency</span><output class="range-value" id="panelEfficiencyValue">25%</output>
+          </label>
+          <input id="panelEfficiency" type="range" min="5" max="35" step="1" value="25" aria-label="Solar cell efficiency percent">
+        </div>
+        <div class="control-group">
+          <label class="field-label range-label" for="panelTilt">
+            <span>Panel tilt</span><output class="range-value" id="panelTiltValue">0°</output>
+          </label>
+          <input id="panelTilt" type="range" min="0" max="90" step="1" value="0" aria-label="Panel tilt above the local horizontal in degrees">
+        </div>
+        <div class="control-group">
+          <label class="field-label range-label" for="panelAzimuth">
+            <span>Panel azimuth</span><output class="range-value" id="panelAzimuthValue">180°</output>
+          </label>
+          <input id="panelAzimuth" type="range" min="0" max="359" step="1" value="180" aria-label="Panel azimuth clockwise from lunar north in degrees">
+        </div>
+        <div class="control-group">
+          <label class="field-label range-label" for="systemLosses">
+            <span>System losses</span><output class="range-value" id="systemLossesValue">10%</output>
+          </label>
+          <input id="systemLosses" type="range" min="0" max="30" step="1" value="10" aria-label="System losses percent">
+        </div>
+      </div>
+      <div class="model-note">Hourly direct-beam estimate over the selected 29.5-day window. Tilt and azimuth set the panel normal; losses are applied as a simple percentage. Terrain shadows, degradation, temperature, storage, and load are not modeled.</div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const solarConstant = 1361;
+      const astronomicalUnitEarthRadii = 23454.8;
+      const dayMilliseconds = 86400000;
+      const hourMilliseconds = 3600000;
+      const horizonsEndpoint = "https://ssd.jpl.nasa.gov/api/horizons.api";
+      const canvas = document.querySelector("#scene");
+      const ctx = canvas.getContext("2d");
+      const landingControl = document.querySelector("#landingSite");
+      const dateControl = document.querySelector("#dateTime");
+      const timelineControl = document.querySelector("#lunarTimeline");
+      const timelineReadout = document.querySelector("#timelineReadout");
+      const playButton = document.querySelector("#playTimeline");
+      const customCoordinates = document.querySelector("#customCoordinates");
+      const latitudeControl = document.querySelector("#latitude");
+      const longitudeControl = document.querySelector("#longitude");
+      const earthReadout = document.querySelector("#earthPosition");
+      const sunReadout = document.querySelector("#sunPosition");
+      const sunlightReadout = document.querySelector("#sunlightReadout");
+      const irradianceReadout = document.querySelector("#irradianceReadout");
+      const earthContactReadout = document.querySelector("#earthContactReadout");
+      const siteReadout = document.querySelector("#siteReadout");
+      const surfaceSideReadout = document.querySelector("#surfaceSideReadout");
+      const ephemerisStatus = document.querySelector("#ephemerisStatus");
+      const positionSourceToggle = document.querySelector("#positionSourceToggle");
+      const modelNote = document.querySelector("#modelNote");
+      const headingReadout = document.querySelector("#headingReadout");
+      const resetButton = document.querySelector("#resetView");
+      const panel = document.querySelector(".panel");
+      const panelTitle = document.querySelector("#panelTitle");
+      const skyTabButton = document.querySelector("#skyTabButton");
+      const powerTabButton = document.querySelector("#powerTabButton");
+      const skyTab = document.querySelector("#skyTab");
+      const powerTab = document.querySelector("#powerTab");
+      const panelAreaControl = document.querySelector("#panelArea");
+      const panelEfficiencyControl = document.querySelector("#panelEfficiency");
+      const panelTiltControl = document.querySelector("#panelTilt");
+      const panelAzimuthControl = document.querySelector("#panelAzimuth");
+      const systemLossesControl = document.querySelector("#systemLosses");
+      const panelAreaValue = document.querySelector("#panelAreaValue");
+      const panelEfficiencyValue = document.querySelector("#panelEfficiencyValue");
+      const panelTiltValue = document.querySelector("#panelTiltValue");
+      const panelAzimuthValue = document.querySelector("#panelAzimuthValue");
+      const systemLossesValue = document.querySelector("#systemLossesValue");
+      const peakPowerReadout = document.querySelector("#peakPower");
+      const totalEnergyReadout = document.querySelector("#totalEnergy");
+      const powerCanvas = document.querySelector("#powerChart");
+      const powerCtx = powerCanvas.getContext("2d");
+      const orbitEarth = document.querySelector("#orbitEarth");
+      const orbitMoon = document.querySelector("#orbitMoon");
+      const moonOrbit = document.querySelector("#moonOrbit");
+      const sunEarthLine = document.querySelector("#sunEarthLine");
+      const earthMoonLine = document.querySelector("#earthMoonLine");
+      const orbitEarthLabel = document.querySelector("#orbitEarthLabel");
+      const orbitMoonLabel = document.querySelector("#orbitMoonLabel");
+
+      const landingSites = {
+        apollo11: { name: "Apollo 11 · Tranquility Base", lat: 0.674, lon: 23.473 },
+        apollo12: { name: "Apollo 12 · Ocean of Storms", lat: -3.013, lon: -23.422 },
+        apollo14: { name: "Apollo 14 · Fra Mauro", lat: -3.645, lon: -17.471 },
+        apollo15: { name: "Apollo 15 · Hadley–Apennine", lat: 26.132, lon: 3.634 },
+        apollo16: { name: "Apollo 16 · Descartes", lat: -8.973, lon: 15.501 },
+        apollo17: { name: "Apollo 17 · Taurus–Littrow", lat: 20.191, lon: 30.772 },
+        luna9: { name: "Luna 9 · Ocean of Storms", lat: 7.08, lon: -64.36 },
+        "chang'e4": { name: "Chang’e 4 · Von Kármán", lat: -45.445, lon: 177.599 }
+      };
+      let yaw = 55;
+      let pitch = 8;
+      let fov = 110;
+      let width = 0;
+      let height = 0;
+      let pixelRatio = 1;
+      let dragging = false;
+      let previousPoint = null;
+      let timelineOffsetDays = 0;
+      let playbackTimer = null;
+      let positionMode = "horizons";
+      let horizonsLoadState = "loading";
+      let horizonsError = "";
+      let activeHorizonsDataset = null;
+      let horizonsRequestId = 0;
+      let horizonsAbortController = null;
+      let horizonsDebounceTimer = null;
+      const horizonsCache = new Map();
+      let horizonForecastCacheKey = null;
+      let horizonForecastCache = null;
+      let powerSamplesCacheKey = null;
+      let powerSamplesCache = null;
+      let powerChartRenderKey = null;
+      let stars = [];
+      let terrainTexture = null;
+      let terrainTextureWidth = 0;
+      let terrainTextureHeight = 0;
+      let randomSeed = 9341;
+
+      function random() {
+        randomSeed = (randomSeed * 16807) % 2147483647;
+        return (randomSeed - 1) / 2147483646;
+      }
+
+      function makeStars() {
+        randomSeed = 9341;
+        stars = Array.from({ length: 720 }, () => ({
+          az: random() * 360,
+          alt: Math.asin(random() * 2 - 1) * 180 / Math.PI,
+          size: random() < 0.08 ? 1.5 + random() * 1.2 : 0.45 + random() * 0.75,
+          alpha: 0.24 + random() * 0.64,
+          warm: random() < 0.16
+        }));
+      }
+
+      function resize() {
+        const bounds = canvas.getBoundingClientRect();
+        width = bounds.width;
+        height = bounds.height;
+        pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width * pixelRatio);
+        canvas.height = Math.round(height * pixelRatio);
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        render();
+      }
+
+      function radians(degrees) { return degrees * Math.PI / 180; }
+
+      function project(azimuth, altitude) {
+        const az = radians(azimuth);
+        const alt = radians(altitude);
+        const cameraYaw = radians(yaw);
+        const cameraPitch = radians(pitch);
+        const cosAlt = Math.cos(alt);
+        const dx = Math.sin(az) * cosAlt;
+        const dy = Math.sin(alt);
+        const dz = -Math.cos(az) * cosAlt;
+        const forward = dx * Math.sin(cameraYaw) * Math.cos(cameraPitch)
+          + dy * Math.sin(cameraPitch)
+          - dz * Math.cos(cameraYaw) * Math.cos(cameraPitch);
+        if (forward <= 0.015) return null;
+        const right = dx * Math.cos(cameraYaw) + dz * Math.sin(cameraYaw);
+        const up = -dx * Math.sin(cameraYaw) * Math.sin(cameraPitch)
+          + dy * Math.cos(cameraPitch)
+          + dz * Math.cos(cameraYaw) * Math.sin(cameraPitch);
+        const focal = width / (2 * Math.tan(radians(fov / 2)));
+        return {
+          x: width / 2 + focal * right / forward,
+          y: height / 2 - focal * up / forward,
+          scale: focal / forward
+        };
+      }
+
+      function normalizeDegrees(value) {
+        return ((value % 360) + 360) % 360;
+      }
+
+      function vectorAdd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+      function vectorSubtract(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+      function vectorScale(v, k) { return [v[0] * k, v[1] * k, v[2] * k]; }
+      function vectorDot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+      function vectorCross(a, b) {
+        return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+      }
+      function vectorLength(v) { return Math.hypot(v[0], v[1], v[2]); }
+      function vectorUnit(v) { return vectorScale(v, 1 / vectorLength(v)); }
+      function toDegrees(value) { return value * 180 / Math.PI; }
+
+      function getSite() {
+        if (landingControl.value !== "custom") return landingSites[landingControl.value] || null;
+        if (!latitudeControl.value.trim() || !longitudeControl.value.trim()) return null;
+        const lat = Number(latitudeControl.value);
+        const lon = Number(longitudeControl.value);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+        return { name: "Custom landing site", lat, lon };
+      }
+
+      function getLunarSide(site) {
+        const facingEarth = Math.cos(radians(site.lat)) * Math.cos(radians(site.lon));
+        return Math.abs(facingEarth) < 1e-6 ? "Limb" : facingEarth > 0 ? "Near side" : "Far side";
+      }
+
+      function orbitalVector(node, inclination, argument, radius) {
+        const n = radians(node);
+        const i = radians(inclination);
+        const u = radians(argument);
+        return [
+          radius * (Math.cos(n) * Math.cos(u) - Math.sin(n) * Math.sin(u) * Math.cos(i)),
+          radius * (Math.sin(n) * Math.cos(u) + Math.cos(n) * Math.sin(u) * Math.cos(i)),
+          radius * Math.sin(u) * Math.sin(i)
+        ];
+      }
+
+      function localPosition(vector, east, north, up) {
+        const distance = vectorLength(vector);
+        return {
+          az: normalizeDegrees(toDegrees(Math.atan2(vectorDot(vector, east), vectorDot(vector, north)))),
+          alt: toDegrees(Math.asin(Math.max(-1, Math.min(1, vectorDot(vector, up) / distance)))),
+          distance
+        };
+      }
+
+      function calculateApproximatePositions(offsetDays = timelineOffsetDays) {
+        const site = getSite();
+        const dateValue = dateControl.value;
+        if (!site || !dateValue) return null;
+        const jd = (Date.parse(`${dateValue}:00Z`) + offsetDays * 86400000) / 86400000 + 2440587.5;
+        if (!Number.isFinite(jd)) return null;
+        const d = jd - 2451543.5;
+        const node = 125.1228 - 0.0529538083 * d;
+        const inclination = 5.1454;
+        const periapsis = 318.0634 + 0.1643573223 * d;
+        const meanAnomaly = radians(normalizeDegrees(115.3654 + 13.0649929509 * d));
+        const eccentricity = 0.0549;
+        let eccentricAnomaly = meanAnomaly + eccentricity * Math.sin(meanAnomaly)
+          * (1 + eccentricity * Math.cos(meanAnomaly));
+        for (let i = 0; i < 5; i++) {
+          eccentricAnomaly -= (eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - meanAnomaly)
+            / (1 - eccentricity * Math.cos(eccentricAnomaly));
+        }
+        const moonX = 60.2666 * (Math.cos(eccentricAnomaly) - eccentricity);
+        const moonY = 60.2666 * Math.sqrt(1 - eccentricity * eccentricity) * Math.sin(eccentricAnomaly);
+        const trueAnomaly = toDegrees(Math.atan2(moonY, moonX));
+        const moonDistance = Math.hypot(moonX, moonY);
+        const moon = orbitalVector(node, inclination, trueAnomaly + periapsis, moonDistance);
+
+        const solarAnomaly = radians(normalizeDegrees(357.529 + 0.98560028 * (jd - 2451545)));
+        const solarLongitude = radians(normalizeDegrees(280.459 + 0.98564736 * (jd - 2451545)))
+          + radians(1.915) * Math.sin(solarAnomaly) + radians(0.02) * Math.sin(2 * solarAnomaly);
+        const solarDistance = astronomicalUnitEarthRadii * (1.00014 - 0.01671 * Math.cos(solarAnomaly)
+          - 0.00014 * Math.cos(2 * solarAnomaly));
+        const sunFromEarth = [solarDistance * Math.cos(solarLongitude), solarDistance * Math.sin(solarLongitude), 0];
+
+        const orbitNormal = vectorUnit([
+          Math.sin(radians(inclination)) * Math.sin(radians(node)),
+          -Math.sin(radians(inclination)) * Math.cos(radians(node)),
+          Math.cos(radians(inclination))
+        ]);
+        const earthDirection = vectorUnit(orbitalVector(node, inclination, periapsis + toDegrees(meanAnomaly), 1));
+        const lunarX = vectorScale(earthDirection, -1);
+        const lunarY = vectorUnit(vectorCross(orbitNormal, lunarX));
+        const latitude = radians(site.lat);
+        const longitude = radians(site.lon);
+        const cosLatitude = Math.cos(latitude);
+        const up = vectorAdd(
+          vectorAdd(vectorScale(lunarX, cosLatitude * Math.cos(longitude)), vectorScale(lunarY, cosLatitude * Math.sin(longitude))),
+          vectorScale(orbitNormal, Math.sin(latitude))
+        );
+        const east = vectorAdd(vectorScale(lunarX, -Math.sin(longitude)), vectorScale(lunarY, Math.cos(longitude)));
+        const north = vectorAdd(
+          vectorAdd(vectorScale(lunarX, -Math.sin(latitude) * Math.cos(longitude)), vectorScale(lunarY, -Math.sin(latitude) * Math.sin(longitude))),
+          vectorScale(orbitNormal, cosLatitude)
+        );
+        const observer = vectorScale(up, 0.2727);
+        const earth = localPosition(vectorSubtract(vectorScale(moon, -1), observer), east, north, up);
+        const sun = localPosition(vectorSubtract(vectorSubtract(sunFromEarth, moon), observer), east, north, up);
+        earth.angularRadius = toDegrees(Math.atan2(1, earth.distance));
+        sun.angularRadius = toDegrees(Math.atan2(109.1, vectorLength(vectorSubtract(sunFromEarth, moon))));
+        return { site, earth, sun, orbit: { moon, sun: sunFromEarth } };
+      }
+
+      function horizonsScenarioKey(site) {
+        return `${dateControl.value}|${site.lat}|${site.lon}`;
+      }
+
+      function updateEphemerisStatus() {
+        positionSourceToggle.textContent = positionMode === "horizons" ? "Use local estimate" : "Use JPL Horizons";
+        modelNote.textContent = positionMode === "horizons"
+          ? "Horizons sky positions are airless apparent coordinates for the lunar site. The orbital inset is illustrative; sunlight, terrain shadows, antenna pointing, and relay outages are simplified. Not for precision navigation."
+          : "Sky positions use the local simplified analytic estimate, not JPL ephemerides. The orbital inset is illustrative; sunlight, terrain shadows, antenna pointing, and relay outages are simplified. Not for precision navigation.";
+        if (positionMode === "local") {
+          ephemerisStatus.dataset.state = "local";
+          ephemerisStatus.textContent = horizonsLoadState === "error"
+            ? "Local estimate active · Horizons unavailable."
+            : `Local analytic estimate · Horizons ${horizonsLoadState === "ready" ? "data cached" : "loading in background"}.`;
+          return;
+        }
+
+        ephemerisStatus.dataset.state = horizonsLoadState;
+        if (horizonsLoadState === "ready") {
+          ephemerisStatus.textContent = "JPL Horizons · airless lunar-site positions (DE441).";
+        } else if (horizonsLoadState === "error") {
+          ephemerisStatus.textContent = `JPL Horizons unavailable: ${horizonsError}`;
+        } else {
+          ephemerisStatus.textContent = "Loading JPL Horizons positions…";
+        }
+      }
+
+      function invalidateEphemerisDerivedCaches() {
+        horizonForecastCacheKey = null;
+        horizonForecastCache = null;
+        powerSamplesCacheKey = null;
+        powerSamplesCache = null;
+        powerChartRenderKey = null;
+      }
+
+      function parseHorizonsSamples(payload, expectedCount) {
+        if (payload.error) throw new Error(String(payload.error));
+        if (typeof payload.result !== "string") throw new Error("Horizons returned no ephemeris table.");
+        const startMarker = payload.result.indexOf("$$SOE");
+        const endMarker = payload.result.indexOf("$$EOE");
+        if (startMarker < 0 || endMarker <= startMarker) {
+          throw new Error("Horizons returned an incomplete ephemeris table.");
+        }
+
+        const rows = payload.result.slice(startMarker + 5, endMarker)
+          .split(/\r?\n/)
+          .map((row) => row.trim())
+          .filter(Boolean);
+        if (rows.length !== expectedCount) {
+          throw new Error(`Horizons returned ${rows.length} of ${expectedCount} hourly samples.`);
+        }
+
+        return rows.map((row) => {
+          const columns = row.split(",");
+          const azimuth = Number(columns[3]);
+          const altitude = Number(columns[4]);
+          const distanceAU = Number(columns[5]);
+          if (!Number.isFinite(azimuth) || !Number.isFinite(altitude)
+            || !Number.isFinite(distanceAU) || distanceAU <= 0) {
+            throw new Error("Horizons returned an invalid azimuth, elevation, or range.");
+          }
+          return {
+            az: normalizeDegrees(azimuth),
+            alt: altitude,
+            distance: distanceAU * astronomicalUnitEarthRadii
+          };
+        });
+      }
+
+      async function fetchHorizonsSamples(target, site, startTime, stopTime, expectedCount, signal) {
+        const parameters = new URLSearchParams({
+          format: "json",
+          COMMAND: `'${target}'`,
+          OBJ_DATA: "'NO'",
+          MAKE_EPHEM: "'YES'",
+          EPHEM_TYPE: "'OBSERVER'",
+          CENTER: "'coord@301'",
+          COORD_TYPE: "'GEODETIC'",
+          SITE_COORD: `'${Number(normalizeDegrees(site.lon).toFixed(8))},${site.lat},0'`,
+          START_TIME: `'${startTime}'`,
+          STOP_TIME: `'${stopTime}'`,
+          STEP_SIZE: "'60 min'",
+          TIME_TYPE: "'UT'",
+          TIME_DIGITS: "'SECONDS'",
+          ANG_FORMAT: "'DEG'",
+          APPARENT: "'AIRLESS'",
+          QUANTITIES: "'4,20'",
+          RANGE_UNITS: "'AU'",
+          ELEV_CUT: "'-90'",
+          SKIP_DAYLT: "'NO'",
+          CSV_FORMAT: "'YES'"
+        });
+        const response = await fetch(`${horizonsEndpoint}?${parameters}`, { signal });
+        if (!response.ok) throw new Error(`Horizons API returned HTTP ${response.status}.`);
+        return parseHorizonsSamples(await response.json(), expectedCount);
+      }
+
+      async function loadHorizonsDataset(site, key) {
+        const requestId = ++horizonsRequestId;
+        const baseTime = Date.parse(`${dateControl.value}:00Z`);
+        if (!Number.isFinite(baseTime)) {
+          horizonsLoadState = "error";
+          horizonsError = "Enter a valid UTC date and time.";
+          updateEphemerisStatus();
+          render();
+          return;
+        }
+
+        const startMs = baseTime - 29.5 * dayMilliseconds;
+        const stopMs = baseTime + 44.25 * dayMilliseconds;
+        const expectedCount = Math.round((stopMs - startMs) / hourMilliseconds) + 1;
+        const formatTime = (time) => new Date(time).toISOString().slice(0, 19).replace("T", " ");
+        const controller = new AbortController();
+        horizonsAbortController = controller;
+        let timedOut = false;
+        const timeout = window.setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, 30000);
+
+        horizonsLoadState = "loading";
+        horizonsError = "";
+        updateEphemerisStatus();
+        try {
+          const [sun, earth] = await Promise.all([
+            fetchHorizonsSamples("10", site, formatTime(startMs), formatTime(stopMs), expectedCount, controller.signal),
+            fetchHorizonsSamples("399", site, formatTime(startMs), formatTime(stopMs), expectedCount, controller.signal)
+          ]);
+          if (requestId !== horizonsRequestId) return;
+
+          const dataset = { key, startMs, stepMs: hourMilliseconds, sun, earth };
+          if (horizonsCache.size >= 4 && !horizonsCache.has(key)) {
+            horizonsCache.delete(horizonsCache.keys().next().value);
+          }
+          horizonsCache.set(key, dataset);
+          activeHorizonsDataset = dataset;
+          horizonsLoadState = "ready";
+        } catch (error) {
+          if (requestId !== horizonsRequestId) return;
+          controller.abort();
+          activeHorizonsDataset = null;
+          horizonsLoadState = "error";
+          horizonsError = timedOut
+            ? "The request timed out."
+            : error instanceof Error ? error.message : "The request failed.";
+          horizonsError = horizonsError.slice(0, 160);
+        } finally {
+          window.clearTimeout(timeout);
+          if (horizonsAbortController === controller) horizonsAbortController = null;
+        }
+        invalidateEphemerisDerivedCaches();
+        updateEphemerisStatus();
+        render();
+      }
+
+      function scheduleHorizonsRefresh(delay = 0) {
+        if (horizonsDebounceTimer !== null) {
+          window.clearTimeout(horizonsDebounceTimer);
+          horizonsDebounceTimer = null;
+        }
+        horizonsRequestId++;
+        if (horizonsAbortController) {
+          horizonsAbortController.abort();
+          horizonsAbortController = null;
+        }
+        activeHorizonsDataset = null;
+        horizonsError = "";
+        invalidateEphemerisDerivedCaches();
+
+        const site = getSite();
+        if (!site || !dateControl.value) {
+          horizonsLoadState = "error";
+          horizonsError = "Enter valid coordinates and a date.";
+          updateEphemerisStatus();
+          render();
+          return;
+        }
+
+        const key = horizonsScenarioKey(site);
+        const cached = horizonsCache.get(key);
+        if (cached) {
+          activeHorizonsDataset = cached;
+          horizonsLoadState = "ready";
+          updateEphemerisStatus();
+          render();
+          return;
+        }
+
+        horizonsLoadState = "loading";
+        updateEphemerisStatus();
+        render();
+        horizonsDebounceTimer = window.setTimeout(() => {
+          horizonsDebounceTimer = null;
+          void loadHorizonsDataset(site, key);
+        }, delay);
+      }
+
+      function interpolateHorizonsBody(samples, sampleIndex, radiusEarthRadii) {
+        const lastIndex = samples.length - 1;
+        if (sampleIndex < -1e-8 || sampleIndex > lastIndex + 1e-8) return null;
+        sampleIndex = Math.max(0, Math.min(lastIndex, sampleIndex));
+        const lowerIndex = Math.floor(sampleIndex);
+        const upperIndex = Math.min(lowerIndex + 1, lastIndex);
+        const fraction = sampleIndex - lowerIndex;
+        const lower = samples[lowerIndex];
+        const upper = samples[upperIndex];
+        const azimuthDelta = ((upper.az - lower.az + 540) % 360) - 180;
+        const distance = lower.distance + (upper.distance - lower.distance) * fraction;
+        return {
+          az: normalizeDegrees(lower.az + azimuthDelta * fraction),
+          alt: lower.alt + (upper.alt - lower.alt) * fraction,
+          distance,
+          angularRadius: toDegrees(Math.atan2(radiusEarthRadii, distance))
+        };
+      }
+
+      function calculatePositions(offsetDays = timelineOffsetDays) {
+        const site = getSite();
+        if (!site || !dateControl.value) return null;
+        if (positionMode === "local") return calculateApproximatePositions(offsetDays);
+
+        const dataset = activeHorizonsDataset;
+        if (!dataset || dataset.key !== horizonsScenarioKey(site)) return null;
+        const timestamp = Date.parse(`${dateControl.value}:00Z`) + offsetDays * dayMilliseconds;
+        const sampleIndex = (timestamp - dataset.startMs) / dataset.stepMs;
+        const sun = interpolateHorizonsBody(dataset.sun, sampleIndex, 109.1);
+        const earth = interpolateHorizonsBody(dataset.earth, sampleIndex, 1);
+        if (!sun || !earth) return null;
+        const orbit = calculateApproximatePositions(offsetDays)?.orbit;
+        return { site, sun, earth, orbit };
+      }
+
+      function updateOrbitDiagram(orbit) {
+        const centerX = 92;
+        const centerY = 48;
+        const earthOrbitRadius = 31;
+        const moonOrbitRadius = 14;
+        const earthAngle = Math.atan2(-orbit.sun[1], -orbit.sun[0]);
+        const moonAngle = Math.atan2(orbit.moon[1], orbit.moon[0]);
+        const earthX = centerX + earthOrbitRadius * Math.cos(earthAngle);
+        const earthY = centerY + earthOrbitRadius * Math.sin(earthAngle);
+        const moonX = earthX + moonOrbitRadius * Math.cos(moonAngle);
+        const moonY = earthY + moonOrbitRadius * Math.sin(moonAngle);
+
+        orbitEarth.setAttribute("cx", String(earthX));
+        orbitEarth.setAttribute("cy", String(earthY));
+        orbitMoon.setAttribute("cx", String(moonX));
+        orbitMoon.setAttribute("cy", String(moonY));
+        moonOrbit.setAttribute("cx", String(earthX));
+        moonOrbit.setAttribute("cy", String(earthY));
+        sunEarthLine.setAttribute("x2", String(earthX));
+        sunEarthLine.setAttribute("y2", String(earthY));
+        earthMoonLine.setAttribute("x1", String(earthX));
+        earthMoonLine.setAttribute("y1", String(earthY));
+        earthMoonLine.setAttribute("x2", String(moonX));
+        earthMoonLine.setAttribute("y2", String(moonY));
+        orbitEarthLabel.setAttribute("x", String(earthX + 5));
+        orbitEarthLabel.setAttribute("y", String(earthY - 7));
+        orbitMoonLabel.setAttribute("x", String(moonX - 21));
+        orbitMoonLabel.setAttribute("y", String(moonY + 14));
+      }
+
+      function formatSunDistance(distance) {
+        const kilometers = distance * 6378.137;
+        if (kilometers >= 1000000) return `${(kilometers / 1000000).toFixed(1)} million km`;
+        return `${Math.round(kilometers).toLocaleString()} km`;
+      }
+
+      function isAboveHorizon(positions, body) {
+        return body === "earth"
+          ? positions.earth.alt + positions.earth.angularRadius > 0
+          : positions.sun.alt > 0;
+      }
+
+      function refineHorizonCrossing(body, initiallyAbove, lowHour, highHour) {
+        for (let i = 0; i < 9; i++) {
+          const middleHour = (lowHour + highHour) / 2;
+          const sample = calculatePositions(timelineOffsetDays + middleHour / 24);
+          if (!sample) return null;
+          if (isAboveHorizon(sample, body) === initiallyAbove) lowHour = middleHour;
+          else highHour = middleHour;
+        }
+        return {
+          hours: (lowHour + highHour) / 2,
+          rising: !initiallyAbove
+        };
+      }
+
+      function findNextHorizonCrossings(positions) {
+        const site = positions.site;
+        const cacheKey = `${dateControl.value}|${site.lat}|${site.lon}|${timelineOffsetDays}`;
+        if (cacheKey === horizonForecastCacheKey) return horizonForecastCache;
+
+        const sunInitiallyAbove = isAboveHorizon(positions, "sun");
+        const earthInitiallyAbove = isAboveHorizon(positions, "earth");
+        let previousSunAbove = sunInitiallyAbove;
+        let previousEarthAbove = earthInitiallyAbove;
+        let sunCrossing = null;
+        let earthCrossing = null;
+
+        for (let hour = 1; hour <= 708 && (!sunCrossing || !earthCrossing); hour++) {
+          const sample = calculatePositions(timelineOffsetDays + hour / 24);
+          if (!sample) break;
+          const sunAbove = isAboveHorizon(sample, "sun");
+          const earthAbove = isAboveHorizon(sample, "earth");
+
+          if (!sunCrossing && sunAbove !== previousSunAbove) {
+            sunCrossing = refineHorizonCrossing("sun", sunInitiallyAbove, hour - 1, hour);
+          }
+          if (!earthCrossing && earthAbove !== previousEarthAbove) {
+            earthCrossing = refineHorizonCrossing("earth", earthInitiallyAbove, hour - 1, hour);
+          }
+          previousSunAbove = sunAbove;
+          previousEarthAbove = earthAbove;
+        }
+
+        horizonForecastCacheKey = cacheKey;
+        horizonForecastCache = { sun: sunCrossing, earth: earthCrossing };
+        return horizonForecastCache;
+      }
+
+      function formatDuration(hours) {
+        const totalMinutes = Math.max(0, Math.round(hours * 60));
+        const days = Math.floor(totalMinutes / 1440);
+        const remainingHours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        if (days) return `${days}d ${String(remainingHours).padStart(2, "0")}h`;
+        if (remainingHours) return `${remainingHours}h ${String(minutes).padStart(2, "0")}m`;
+        return `${minutes}m`;
+      }
+
+      function updateOperationalReadouts(positions) {
+        const forecast = findNextHorizonCrossings(positions);
+        const sunAbove = isAboveHorizon(positions, "sun");
+        if (sunAbove) {
+          sunlightReadout.textContent = forecast.sun
+            ? `${formatDuration(forecast.sun.hours)} to sunset`
+            : "Sunlit through next lunar day";
+        } else {
+          sunlightReadout.textContent = forecast.sun?.rising
+            ? `Dark · sunrise in ${formatDuration(forecast.sun.hours)}`
+            : "No sunrise in next lunar day";
+        }
+
+        const horizontalIrradiance = solarConstant
+          * (astronomicalUnitEarthRadii / positions.sun.distance) ** 2
+          * Math.max(0, Math.sin(radians(positions.sun.alt)));
+        irradianceReadout.textContent = `${Math.round(horizontalIrradiance)} W/m²`;
+
+        const earthInView = isAboveHorizon(positions, "earth");
+        if (earthInView) {
+          earthContactReadout.textContent = forecast.earth
+            ? `Earth in view · sets in ${formatDuration(forecast.earth.hours)}`
+            : "Earth in view through next lunar day";
+        } else {
+          earthContactReadout.textContent = forecast.earth?.rising
+            ? `No direct view · Earthrise in ${formatDuration(forecast.earth.hours)}`
+            : "No direct view in next lunar day";
+        }
+      }
+
+      function getPowerSolarSamples() {
+        const site = getSite();
+        if (!site || !dateControl.value) return null;
+        const key = `${dateControl.value}|${site.lat}|${site.lon}|${timelineOffsetDays}`;
+        if (key === powerSamplesCacheKey) return powerSamplesCache;
+
+        const samples = [];
+        for (let hour = 0; hour <= 708; hour++) {
+          const positions = calculatePositions(timelineOffsetDays + (hour - 354) / 24);
+          if (!positions) return null;
+          samples.push({
+            altitude: positions.sun.alt,
+            azimuth: positions.sun.az,
+            distance: positions.sun.distance
+          });
+        }
+        powerSamplesCacheKey = key;
+        powerSamplesCache = samples;
+        return samples;
+      }
+
+      function formatPower(watts) {
+        return watts >= 1000 ? `${(watts / 1000).toFixed(2)} kW` : `${Math.round(watts)} W`;
+      }
+
+      function formatEnergy(kilowattHours) {
+        return kilowattHours < 1
+          ? `${Math.round(kilowattHours * 1000)} Wh`
+          : `${kilowattHours.toFixed(2)} kWh`;
+      }
+
+      function drawPowerChart() {
+        if (powerTab.hidden) return;
+        const bounds = powerCanvas.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+
+        const site = getSite();
+        const renderKey = [
+          dateControl.value, site?.lat, site?.lon, timelineOffsetDays,
+          panelAreaControl.value, panelEfficiencyControl.value, panelTiltControl.value,
+          panelAzimuthControl.value, systemLossesControl.value, bounds.width, bounds.height
+        ].join("|");
+        if (renderKey === powerChartRenderKey) return;
+        powerChartRenderKey = renderKey;
+
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        powerCanvas.width = Math.round(bounds.width * ratio);
+        powerCanvas.height = Math.round(bounds.height * ratio);
+        powerCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        powerCtx.clearRect(0, 0, bounds.width, bounds.height);
+
+        const samples = getPowerSolarSamples();
+        if (!samples) {
+          const message = positionMode === "horizons" && horizonsLoadState === "loading"
+            ? "Loading JPL Horizons…"
+            : positionMode === "horizons" && horizonsLoadState === "error"
+              ? "JPL Horizons unavailable"
+              : "Check date / coordinates";
+          peakPowerReadout.textContent = message;
+          totalEnergyReadout.textContent = "—";
+          powerCtx.fillStyle = "#a4a4a3";
+          powerCtx.font = "12px system-ui, sans-serif";
+          powerCtx.textAlign = "center";
+          powerCtx.fillText(message, bounds.width / 2, bounds.height / 2);
+          return;
+        }
+
+        const area = Number(panelAreaControl.value);
+        const efficiency = Number(panelEfficiencyControl.value) / 100;
+        const tilt = radians(Number(panelTiltControl.value));
+        const azimuth = radians(Number(panelAzimuthControl.value));
+        const lossFactor = 1 - Number(systemLossesControl.value) / 100;
+        let energyWattHours = 0;
+        let previousPower = 0;
+        let peakPower = 0;
+        const series = samples.map((sample, index) => {
+          const altitude = radians(sample.altitude);
+          const incidence = Math.sin(altitude) * Math.cos(tilt)
+            + Math.cos(altitude) * Math.sin(tilt) * Math.cos(radians(sample.azimuth) - azimuth);
+          const directNormal = solarConstant * (astronomicalUnitEarthRadii / sample.distance) ** 2;
+          const irradiance = sample.altitude > 0 ? directNormal * Math.max(0, incidence) : 0;
+          const power = irradiance * area * efficiency * lossFactor;
+          if (index > 0) energyWattHours += (previousPower + power) / 2;
+          previousPower = power;
+          peakPower = Math.max(peakPower, power);
+          return { power, energyKWh: energyWattHours / 1000 };
+        });
+
+        const totalEnergyKWh = energyWattHours / 1000;
+        peakPowerReadout.textContent = formatPower(peakPower);
+        totalEnergyReadout.textContent = formatEnergy(totalEnergyKWh);
+
+        const left = 51;
+        const right = bounds.width - 53;
+        const top = 18;
+        const bottom = bounds.height - 31;
+        const plotWidth = right - left;
+        const plotHeight = bottom - top;
+        const powerMax = Math.max(1, peakPower * 1.08);
+        const energyMax = Math.max(0.1, totalEnergyKWh * 1.08);
+
+        powerCtx.font = "9px system-ui, sans-serif";
+        powerCtx.lineWidth = 1;
+        for (let tick = 0; tick <= 4; tick++) {
+          const fraction = tick / 4;
+          const y = bottom - fraction * plotHeight;
+          powerCtx.strokeStyle = "rgb(255 255 255 / 10%)";
+          powerCtx.beginPath();
+          powerCtx.moveTo(left, y);
+          powerCtx.lineTo(right, y);
+          powerCtx.stroke();
+          powerCtx.fillStyle = "#92949a";
+          powerCtx.textAlign = "right";
+          powerCtx.textBaseline = "middle";
+          powerCtx.fillText(String(Math.round(powerMax * fraction)), left - 7, y);
+          powerCtx.textAlign = "left";
+          powerCtx.fillText((energyMax * fraction).toFixed(1), right + 7, y);
+        }
+
+        powerCtx.save();
+        powerCtx.setLineDash([3, 4]);
+        powerCtx.strokeStyle = "rgb(255 255 255 / 28%)";
+        powerCtx.beginPath();
+        powerCtx.moveTo(left + plotWidth / 2, top);
+        powerCtx.lineTo(left + plotWidth / 2, bottom);
+        powerCtx.stroke();
+        powerCtx.restore();
+
+        powerCtx.fillStyle = "#a4a4a3";
+        powerCtx.textBaseline = "alphabetic";
+        powerCtx.textAlign = "left";
+        powerCtx.fillText("W", 8, 12);
+        powerCtx.textAlign = "right";
+        powerCtx.fillText("kWh", bounds.width - 7, 12);
+        powerCtx.textBaseline = "top";
+        powerCtx.textAlign = "left";
+        powerCtx.fillText("−14.8 d", left, bounds.height - 23);
+        powerCtx.textAlign = "center";
+        powerCtx.fillText("Selected time", left + plotWidth / 2, bounds.height - 23);
+        powerCtx.textAlign = "right";
+        powerCtx.fillText("+14.8 d", right, bounds.height - 23);
+
+        function drawSeries(value, maxValue, color) {
+          powerCtx.beginPath();
+          series.forEach((point, index) => {
+            const x = left + index / (series.length - 1) * plotWidth;
+            const y = bottom - point[value] / maxValue * plotHeight;
+            if (index === 0) powerCtx.moveTo(x, y);
+            else powerCtx.lineTo(x, y);
+          });
+          powerCtx.strokeStyle = color;
+          powerCtx.lineWidth = 2;
+          powerCtx.lineJoin = "round";
+          powerCtx.stroke();
+        }
+
+        drawSeries("power", powerMax, "#efc889");
+        drawSeries("energyKWh", energyMax, "#8fb8d7");
+      }
+
+      function updatePowerParameterValues() {
+        panelAreaValue.textContent = `${Number(panelAreaControl.value).toFixed(1)} m²`;
+        panelEfficiencyValue.textContent = `${panelEfficiencyControl.value}%`;
+        panelTiltValue.textContent = `${panelTiltControl.value}°`;
+        panelAzimuthValue.textContent = `${panelAzimuthControl.value}°`;
+        systemLossesValue.textContent = `${systemLossesControl.value}%`;
+        powerChartRenderKey = null;
+        drawPowerChart();
+      }
+
+      function selectTab(powerSelected) {
+        skyTab.hidden = powerSelected;
+        powerTab.hidden = !powerSelected;
+        skyTabButton.setAttribute("aria-selected", String(!powerSelected));
+        powerTabButton.setAttribute("aria-selected", String(powerSelected));
+        skyTabButton.tabIndex = powerSelected ? -1 : 0;
+        powerTabButton.tabIndex = powerSelected ? 0 : -1;
+        panel.classList.toggle("power-mode", powerSelected);
+        panelTitle.textContent = powerSelected ? "Solar power estimate" : "Set your vantage point";
+        if (powerSelected) {
+          powerChartRenderKey = null;
+          drawPowerChart();
+        }
+      }
+
+      function drawSky(positions) {
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, "#080c17");
+        sky.addColorStop(0.58, "#111a2a");
+        sky.addColorStop(1, "#33343a");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+
+        const sun = positions?.sun;
+        if (!sun) return;
+        const sunPoint = project(sun.az, sun.alt);
+        if (sunPoint && sunPoint.x > -80 && sunPoint.x < width + 80 && sunPoint.y > -80 && sunPoint.y < height + 80) {
+          const halo = ctx.createRadialGradient(sunPoint.x, sunPoint.y, 1, sunPoint.x, sunPoint.y, 135);
+          halo.addColorStop(0, "rgb(246 202 132 / 17%)");
+          halo.addColorStop(0.36, "rgb(230 181 121 / 7%)");
+          halo.addColorStop(1, "rgb(230 181 121 / 0%)");
+          ctx.fillStyle = halo;
+          ctx.fillRect(sunPoint.x - 140, sunPoint.y - 140, 280, 280);
+        }
+
+        for (const star of stars) {
+          const point = project(star.az, star.alt);
+          if (!point || point.x < 0 || point.x > width || point.y < 0 || point.y > height) continue;
+          const sunSeparation = Math.acos(Math.max(-1, Math.min(1,
+            Math.sin(radians(star.alt)) * Math.sin(radians(sun.alt))
+            + Math.cos(radians(star.alt)) * Math.cos(radians(sun.alt))
+            * Math.cos(radians(star.az - sun.az))
+          ))) * 180 / Math.PI;
+          if (sunSeparation < 28) continue;
+          ctx.globalAlpha = star.alpha;
+          ctx.fillStyle = star.warm ? "#ffe0b0" : "#d8e4f2";
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, star.size, 0, Math.PI * 2);
+          ctx.fill();
+          if (star.size > 2.2) {
+            ctx.globalAlpha = star.alpha * 0.3;
+            ctx.fillRect(point.x - star.size * 2.2, point.y - 0.35, star.size * 4.4, 0.7);
+            ctx.fillRect(point.x - 0.35, point.y - star.size * 2.2, 0.7, star.size * 4.4);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRidge(baseY, amplitude, phase, color) {
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let x = 0; x <= width + 4; x += 4) {
+          const y = baseY
+            + Math.sin(x * 0.006 + phase) * amplitude
+            + Math.sin(x * 0.016 + phase * 1.7) * amplitude * 0.32
+            + Math.sin(x * 0.0028 + phase * 0.7) * amplitude * 0.75;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      function drawGround() {
+        const focal = width / (2 * Math.tan(radians(fov / 2)));
+        const horizon = height / 2 + focal * Math.tan(radians(pitch));
+        if (horizon >= height + 160) return;
+
+        const backBase = horizon + 9;
+        drawRidge(backBase, Math.max(9, height * 0.023), 1.4, "#34343a");
+        drawRidge(backBase + 12, Math.max(11, height * 0.031), 4.1, "#3d3c40");
+
+        const ground = ctx.createLinearGradient(0, Math.max(-40, horizon), 0, height);
+        ground.addColorStop(0, "#5a5650");
+        ground.addColorStop(0.28, "#47443f");
+        ground.addColorStop(1, "#292a2c");
+        ctx.fillStyle = ground;
+        ctx.beginPath();
+        ctx.moveTo(0, horizon + Math.sin(yaw * 0.03) * 2);
+        for (let x = 0; x <= width + 5; x += 5) {
+          const wave = Math.sin(x * 0.004 + yaw * 0.09) * 5
+            + Math.sin(x * 0.011 + 2.5) * 2.3
+            + Math.sin(x * 0.0017 + yaw * 0.03) * 6;
+          ctx.lineTo(x, horizon + wave);
+        }
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.save();
+        ctx.clip();
+        drawGroundTexture();
+        ctx.restore();
+
+        const groundGlow = ctx.createLinearGradient(0, horizon, 0, Math.min(height, horizon + 145));
+        groundGlow.addColorStop(0, "rgb(234 203 155 / 8%)");
+        groundGlow.addColorStop(1, "rgb(234 203 155 / 0%)");
+        ctx.fillStyle = groundGlow;
+        ctx.fillRect(0, Math.max(0, horizon - 3), width, Math.min(height, 150));
+
+        drawCrater(width * 0.73, horizon + height * 0.28, width * 0.15, height * 0.085);
+        drawCrater(width * 0.18, horizon + height * 0.42, width * 0.09, height * 0.05);
+        drawRock(width * 0.56, horizon + height * 0.12, 1);
+        drawRock(width * 0.89, horizon + height * 0.19, 0.7);
+        drawRock(width * 0.32, horizon + height * 0.21, 0.62);
+      }
+
+      function drawCrater(x, y, rx, ry) {
+        if (y - ry > height || y + ry < 0) return;
+        const rim = ctx.createLinearGradient(x, y - ry, x, y + ry);
+        rim.addColorStop(0, "rgb(177 166 149 / 43%)");
+        rim.addColorStop(0.35, "rgb(29 29 30 / 48%)");
+        rim.addColorStop(1, "rgb(18 19 21 / 16%)");
+        ctx.fillStyle = rim;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, -0.035, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgb(199 184 159 / 22%)";
+        ctx.lineWidth = Math.max(1, ry * 0.08);
+        ctx.beginPath();
+        ctx.ellipse(x, y - ry * 0.1, rx * 0.98, ry * 0.86, -0.035, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.stroke();
+        ctx.fillStyle = "rgb(16 17 18 / 15%)";
+        ctx.beginPath();
+        ctx.ellipse(x + rx * 0.08, y + ry * 0.13, rx * 0.47, ry * 0.35, -0.06, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawRock(x, y, scale) {
+        if (y < -30 || y > height + 30 || x < -30 || x > width + 30) return;
+        const size = Math.max(3, Math.min(20, height * 0.018)) * scale;
+        ctx.fillStyle = "#27282a";
+        ctx.beginPath();
+        ctx.moveTo(x - size, y);
+        ctx.lineTo(x - size * 0.48, y - size * 0.8);
+        ctx.lineTo(x + size * 0.18, y - size * 0.9);
+        ctx.lineTo(x + size, y - size * 0.18);
+        ctx.lineTo(x + size * 0.61, y + size * 0.18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "rgb(191 180 161 / 21%)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x - size * 0.48, y - size * 0.8);
+        ctx.lineTo(x + size * 0.18, y - size * 0.9);
+        ctx.lineTo(x + size, y - size * 0.18);
+        ctx.stroke();
+      }
+
+      function drawGroundTexture() {
+        const textureWidth = Math.max(1, Math.ceil(width));
+        const textureHeight = Math.max(1, Math.ceil(height));
+        if (!terrainTexture || terrainTextureWidth !== textureWidth || terrainTextureHeight !== textureHeight) {
+          terrainTexture = document.createElement("canvas");
+          terrainTexture.width = textureWidth;
+          terrainTexture.height = textureHeight;
+          terrainTextureWidth = textureWidth;
+          terrainTextureHeight = textureHeight;
+          const textureCtx = terrainTexture.getContext("2d");
+          let seed = 564732;
+          const nextRandom = () => {
+            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+            return seed / 4294967296;
+          };
+
+          const grainCount = Math.min(12000, Math.ceil(textureWidth * textureHeight * 0.009));
+          for (let i = 0; i < grainCount; i++) {
+            const x = nextRandom() * textureWidth;
+            const y = nextRandom() * textureHeight;
+            const depth = y / textureHeight;
+            const size = 0.35 + nextRandom() * (0.9 + depth * 1.6);
+            const light = nextRandom() > 0.52;
+            const alpha = (0.04 + nextRandom() * 0.07) * (0.55 + depth * 1.4);
+            textureCtx.fillStyle = light
+              ? `rgba(222, 214, 199, ${alpha})`
+              : `rgba(12, 13, 14, ${alpha})`;
+            textureCtx.fillRect(x, y, size, size);
+          }
+
+          const patchCount = Math.min(24, Math.ceil(textureWidth * textureHeight / 65000));
+          for (let i = 0; i < patchCount; i++) {
+            const x = nextRandom() * textureWidth;
+            const y = nextRandom() * textureHeight;
+            const depth = y / textureHeight;
+            const radius = (24 + nextRandom() * 78) * (0.4 + depth);
+            const lighter = nextRandom() > 0.5;
+            const patch = textureCtx.createRadialGradient(x, y, 0, x, y, radius);
+            patch.addColorStop(0, lighter
+              ? `rgba(221, 210, 190, ${0.035 + depth * 0.025})`
+              : `rgba(15, 16, 17, ${0.045 + depth * 0.03})`);
+            patch.addColorStop(1, "rgba(0, 0, 0, 0)");
+            textureCtx.fillStyle = patch;
+            textureCtx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+          }
+
+          const craterCount = Math.min(140, Math.ceil(textureWidth * textureHeight / 10000));
+          for (let i = 0; i < craterCount; i++) {
+            const x = nextRandom() * textureWidth;
+            const y = nextRandom() * textureHeight;
+            const depth = y / textureHeight;
+            const radius = (1.8 + nextRandom() * 9) * (0.4 + depth * 1.35);
+            textureCtx.fillStyle = `rgba(12, 13, 14, ${0.09 + depth * 0.1})`;
+            textureCtx.beginPath();
+            textureCtx.ellipse(x + radius * 0.08, y + radius * 0.12, radius * 1.35, radius * 0.72, -0.08, 0, Math.PI * 2);
+            textureCtx.fill();
+            textureCtx.strokeStyle = `rgba(225, 214, 195, ${0.055 + depth * 0.06})`;
+            textureCtx.lineWidth = Math.max(0.35, radius * 0.08);
+            textureCtx.beginPath();
+            textureCtx.ellipse(x, y, radius, radius * 0.58, -0.08, Math.PI * 1.08, Math.PI * 1.92);
+            textureCtx.stroke();
+          }
+        }
+        ctx.drawImage(terrainTexture, 0, 0, width, height);
+      }
+
+      function drawEarth(earth) {
+        if (earth.alt <= -1) return;
+        const point = project(earth.az, earth.alt);
+        if (!point || point.x < -80 || point.x > width + 80 || point.y < -80 || point.y > height + 80) return;
+        const radius = Math.max(5, point.scale * Math.tan(radians(earth.angularRadius)));
+
+        const glow = ctx.createRadialGradient(point.x, point.y, radius * 0.65, point.x, point.y, radius * 2.5);
+        glow.addColorStop(0, "rgb(126 181 222 / 25%)");
+        glow.addColorStop(1, "rgb(126 181 222 / 0%)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.clip();
+        const ocean = ctx.createLinearGradient(point.x - radius, point.y - radius, point.x + radius, point.y + radius);
+        ocean.addColorStop(0, "#b8d7e8");
+        ocean.addColorStop(0.48, "#6094b7");
+        ocean.addColorStop(1, "#315272");
+        ctx.fillStyle = ocean;
+        ctx.fillRect(point.x - radius, point.y - radius, radius * 2, radius * 2);
+        ctx.fillStyle = "rgb(194 205 177 / 82%)";
+        ctx.beginPath();
+        ctx.ellipse(point.x - radius * 0.18, point.y - radius * 0.05, radius * 0.29, radius * 0.16, -0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(point.x + radius * 0.3, point.y + radius * 0.37, radius * 0.12, radius * 0.2, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.strokeStyle = "rgb(226 239 242 / 77%)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        drawObjectLabel(point, "EARTH", `${Math.round(earth.distance * 6378.137).toLocaleString()} KM`, radius);
+      }
+
+      function drawSun(sun) {
+        if (sun.alt <= -1) return;
+        const point = project(sun.az, sun.alt);
+        if (!point || point.x < -100 || point.x > width + 100 || point.y < -100 || point.y > height + 100) return;
+        const radius = Math.max(4, point.scale * Math.tan(radians(sun.angularRadius)));
+        const glow = ctx.createRadialGradient(point.x, point.y, radius, point.x, point.y, radius * 11);
+        glow.addColorStop(0, "rgb(255 222 167 / 39%)");
+        glow.addColorStop(0.18, "rgb(249 204 143 / 18%)");
+        glow.addColorStop(1, "rgb(249 204 143 / 0%)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius * 11, 0, Math.PI * 2);
+        ctx.fill();
+
+        const disk = ctx.createRadialGradient(point.x - radius * 0.3, point.y - radius * 0.35, 0, point.x, point.y, radius);
+        disk.addColorStop(0, "#fff8df");
+        disk.addColorStop(0.6, "#f7d99d");
+        disk.addColorStop(1, "#eebd72");
+        ctx.fillStyle = disk;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        drawObjectLabel(point, "SUN", formatSunDistance(sun.distance), radius);
+      }
+
+      function drawObjectLabel(point, title, caption, radius) {
+        const placeLeft = point.x > width * 0.34;
+        const x = placeLeft
+          ? point.x - radius - 96
+          : point.x + Math.max(17, radius + 10);
+        const lineAnchor = placeLeft ? x + 80 : x - 5;
+        const y = point.y + 3;
+        ctx.save();
+        ctx.globalAlpha = 0.84;
+        ctx.strokeStyle = "rgb(233 229 218 / 47%)";
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(placeLeft ? point.x - radius - 2 : point.x + radius + 2, point.y);
+        ctx.lineTo(lineAnchor, point.y);
+        ctx.lineTo(lineAnchor, y + 15);
+        ctx.lineTo(placeLeft ? x + 75 : x, y + 15);
+        ctx.stroke();
+        ctx.font = "600 9px Inter, system-ui, sans-serif";
+        ctx.letterSpacing = "1.5px";
+        ctx.fillStyle = "#f3eee4";
+        ctx.fillText(title, x, y + 4);
+        ctx.font = "9px Inter, system-ui, sans-serif";
+        ctx.letterSpacing = "0.5px";
+        ctx.fillStyle = "rgb(224 222 217 / 76%)";
+        ctx.fillText(caption, x, y + 18);
+        ctx.restore();
+      }
+
+      function formatPosition(object) {
+        const altitude = `${Math.abs(object.alt).toFixed(1)}° ${object.alt < 0 ? "below" : "above"}`;
+        return `${altitude} · ${object.az.toFixed(1)}°`;
+      }
+
+      function updateReadouts(positions) {
+        updateEphemerisStatus();
+        const site = positions?.site ?? getSite();
+        if (site) {
+          const lunarSide = getLunarSide(site);
+          surfaceSideReadout.textContent = `Lunar surface · ${lunarSide}`;
+        } else {
+          surfaceSideReadout.textContent = "Lunar surface · Check coordinates";
+        }
+        const landingDate = Date.parse(`${dateControl.value}:00Z`);
+        if (Number.isFinite(landingDate)) {
+          const currentDate = new Date(landingDate + timelineOffsetDays * 86400000);
+          const dateLabel = new Intl.DateTimeFormat("en-GB", {
+            day: "2-digit", month: "short", year: "numeric",
+            hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false
+          }).format(currentDate);
+          timelineReadout.textContent = `T${timelineOffsetDays < 0 ? "−" : "+"}${Math.abs(timelineOffsetDays).toFixed(2)} d · ${dateLabel} UTC`;
+        }
+        if (positions) {
+          earthReadout.textContent = formatPosition(positions.earth);
+          sunReadout.textContent = formatPosition(positions.sun);
+          siteReadout.textContent = `${positions.site.name} · ${Math.abs(positions.site.lat).toFixed(3)}° ${positions.site.lat < 0 ? "S" : "N"}, ${Math.abs(positions.site.lon).toFixed(3)}° ${positions.site.lon < 0 ? "W" : "E"}`;
+          updateOrbitDiagram(positions.orbit);
+          updateOperationalReadouts(positions);
+        } else {
+          const unavailableLabel = positionMode === "horizons" && horizonsLoadState === "loading"
+            ? "Loading JPL Horizons…"
+            : positionMode === "horizons" && horizonsLoadState === "error"
+              ? "JPL Horizons unavailable"
+              : "Check date / coordinates";
+          earthReadout.textContent = unavailableLabel;
+          sunReadout.textContent = unavailableLabel;
+          if (site) {
+            siteReadout.textContent = `${site.name} · ${Math.abs(site.lat).toFixed(3)}° ${site.lat < 0 ? "S" : "N"}, ${Math.abs(site.lon).toFixed(3)}° ${site.lon < 0 ? "W" : "E"}`;
+          } else {
+            siteReadout.textContent = "Check date / coordinates";
+          }
+          sunlightReadout.textContent = "—";
+          irradianceReadout.textContent = "—";
+          earthContactReadout.textContent = "—";
+        }
+        const heading = Math.round(normalizeDegrees(yaw));
+        const cardinal = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(heading / 45) % 8];
+        headingReadout.textContent = `${cardinal} · ${String(heading).padStart(3, "0")}°`;
+      }
+
+      function render() {
+        if (!width || !height) return;
+        const positions = calculatePositions();
+        ctx.clearRect(0, 0, width, height);
+        drawSky(positions);
+        if (positions) {
+          drawSun(positions.sun);
+          drawEarth(positions.earth);
+        }
+        drawGround();
+        updateReadouts(positions);
+        drawPowerChart();
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        dragging = true;
+        previousPoint = { x: event.clientX, y: event.clientY };
+        canvas.setPointerCapture(event.pointerId);
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (!dragging || !previousPoint) return;
+        yaw = normalizeDegrees(yaw + (previousPoint.x - event.clientX) * 0.25);
+        pitch = Math.max(-82, Math.min(82, pitch + (event.clientY - previousPoint.y) * 0.22));
+        previousPoint = { x: event.clientX, y: event.clientY };
+        render();
+      });
+
+      function stopDragging() {
+        dragging = false;
+        previousPoint = null;
+      }
+
+      canvas.addEventListener("pointerup", stopDragging);
+      canvas.addEventListener("pointercancel", stopDragging);
+      canvas.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        fov = Math.max(38, Math.min(105, fov + Math.sign(event.deltaY) * 3));
+        render();
+      }, { passive: false });
+
+      function updateSiteAndDate() {
+        customCoordinates.hidden = landingControl.value !== "custom";
+        scheduleHorizonsRefresh();
+      }
+
+      skyTabButton.addEventListener("click", () => selectTab(false));
+      powerTabButton.addEventListener("click", () => selectTab(true));
+      document.querySelector(".tabs").addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        const nextTab = event.key === "ArrowRight" ? powerTabButton : skyTabButton;
+        nextTab.focus();
+        nextTab.click();
+      });
+
+      landingControl.addEventListener("change", updateSiteAndDate);
+      dateControl.addEventListener("input", () => {
+        timelineControl.value = "354";
+        timelineOffsetDays = 0;
+        scheduleHorizonsRefresh(350);
+      });
+      timelineControl.addEventListener("input", () => {
+        timelineOffsetDays = (Number(timelineControl.value) - 354) / 24;
+        render();
+      });
+      latitudeControl.addEventListener("input", () => scheduleHorizonsRefresh(400));
+      longitudeControl.addEventListener("input", () => scheduleHorizonsRefresh(400));
+      positionSourceToggle.addEventListener("click", () => {
+        positionMode = positionMode === "horizons" ? "local" : "horizons";
+        const site = getSite();
+        if (positionMode === "horizons" && site
+          && (!activeHorizonsDataset || activeHorizonsDataset.key !== horizonsScenarioKey(site))
+          && horizonsLoadState !== "loading") {
+          scheduleHorizonsRefresh();
+          return;
+        }
+        invalidateEphemerisDerivedCaches();
+        updateEphemerisStatus();
+        render();
+      });
+      [
+        panelAreaControl, panelEfficiencyControl, panelTiltControl,
+        panelAzimuthControl, systemLossesControl
+      ].forEach((control) => control.addEventListener("input", updatePowerParameterValues));
+
+      function stopPlayback() {
+        if (playbackTimer !== null) {
+          window.clearInterval(playbackTimer);
+          playbackTimer = null;
+        }
+        playButton.textContent = "▶ Play";
+        playButton.setAttribute("aria-pressed", "false");
+      }
+
+      playButton.addEventListener("click", () => {
+        if (playbackTimer !== null) {
+          stopPlayback();
+          return;
+        }
+        if (Number(timelineControl.value) >= Number(timelineControl.max)) {
+          timelineControl.value = "0";
+        }
+        playButton.textContent = "Ⅱ Pause";
+        playButton.setAttribute("aria-pressed", "true");
+        playbackTimer = window.setInterval(() => {
+          const next = Number(timelineControl.value) + 1;
+          if (next > Number(timelineControl.max)) {
+            timelineControl.value = "0";
+          } else {
+            timelineControl.value = String(next);
+          }
+          timelineOffsetDays = (Number(timelineControl.value) - 354) / 24;
+          render();
+        }, 250);
+      });
+
+      timelineControl.addEventListener("pointerdown", stopPlayback);
+      timelineControl.addEventListener("keydown", stopPlayback);
+      dateControl.addEventListener("input", stopPlayback);
+
+      window.addEventListener("keydown", (event) => {
+        if (event.target instanceof HTMLElement
+          && event.target.matches("input, select, button")) return;
+        const step = event.shiftKey ? 12 : 5;
+        if (event.key === "ArrowLeft") yaw = normalizeDegrees(yaw - step);
+        else if (event.key === "ArrowRight") yaw = normalizeDegrees(yaw + step);
+        else if (event.key === "ArrowUp") pitch = Math.min(82, pitch + step);
+        else if (event.key === "ArrowDown") pitch = Math.max(-82, pitch - step);
+        else if (event.key === "+" || event.key === "=") fov = Math.max(38, fov - 4);
+        else if (event.key === "-") fov = Math.min(105, fov + 4);
+        else return;
+        event.preventDefault();
+        render();
+      });
+
+      function resetView() {
+        const positions = calculatePositions();
+        if (positions) {
+          const visible = [positions.earth, positions.sun].filter((object) => object.alt > -1);
+          if (visible.length) {
+            const target = positions.earth.alt > -1 ? positions.earth : visible[0];
+            yaw = normalizeDegrees(target.az + 35);
+            pitch = visible.reduce((sum, object) => sum + object.alt, 0) / visible.length;
+          }
+        }
+        fov = 110;
+        render();
+      }
+
+      resetButton.addEventListener("click", () => {
+        resetView();
+      });
+
+      window.addEventListener("resize", resize);
+      makeStars();
+      landingControl.value = "apollo11";
+      landingControl.dispatchEvent(new Event("change"));
+      resetView();
+      resize();
+    })();
+  </script>
+</body>
+</html>
