@@ -108,19 +108,20 @@
       position: fixed;
       top: 91px;
       left: 32px;
-      width: 230px;
-      padding: 12px 13px 10px;
+      width: 300px;
+      padding: 14px 15px 12px;
       border: 1px solid var(--line);
       border-radius: 11px;
       background: rgb(13 15 21 / 64%);
       box-shadow: 0 12px 36px rgb(0 0 0 / 16%);
       backdrop-filter: blur(12px);
       pointer-events: none;
+      z-index: 2;
     }
 
     .orbit-card-heading {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 8px;
       color: #d7d4ce;
@@ -130,7 +131,8 @@
       text-transform: uppercase;
     }
 
-    .orbit-card-heading span:last-child {
+    .orbit-scale {
+      margin-left: auto;
       color: #86868b;
       font-size: 7px;
       font-weight: 500;
@@ -140,10 +142,56 @@
     .orbit-diagram {
       display: block;
       width: 100%;
-      height: 94px;
-      margin-top: 5px;
+      height: 125px;
+      margin-top: 8px;
       overflow: visible;
     }
+
+    .widget-toggle,
+    .widget-reopen {
+      padding: 6px 9px;
+      border: 1px solid rgb(255 255 255 / 19%);
+      border-radius: 7px;
+      background: rgb(8 11 17 / 72%);
+      color: #d2d0ca;
+      font: inherit;
+      font-size: 8px;
+      letter-spacing: .05em;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+    }
+
+    .widget-toggle {
+      padding: 4px 7px;
+      pointer-events: auto;
+    }
+
+    .widget-toggle:hover,
+    .widget-reopen:hover {
+      border-color: rgb(239 200 137 / 55%);
+      color: var(--gold);
+    }
+
+    .widget-toggle:focus-visible,
+    .widget-reopen:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .widget-reopen {
+      position: fixed;
+      z-index: 3;
+      font-size: 9px;
+    }
+
+    .widget-reopen[hidden],
+    .orbit-card[hidden],
+    .panel[hidden] {
+      display: none;
+    }
+
+    .orbit-reopen { top: 91px; left: 32px; }
+    .panel-reopen { right: 28px; bottom: 28px; }
 
     .orbit-path {
       fill: none;
@@ -191,6 +239,12 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 11px;
+    }
+
+    .panel-heading-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
     }
 
     .tabs {
@@ -601,8 +655,10 @@
       .topbar { padding: 19px 17px; }
       .brand-caption { font-size: 9px; }
       .live { padding: 8px 10px; font-size: 8px; }
-      .orbit-card { top: 78px; left: 17px; width: 200px; padding: 10px 11px 8px; }
-      .orbit-diagram { height: 82px; }
+      .orbit-card { top: 78px; left: 17px; width: min(260px, calc(100vw - 34px)); padding: 10px 11px 9px; }
+      .orbit-diagram { height: 108px; margin-top: 6px; }
+      .orbit-reopen { top: 78px; left: 17px; }
+      .panel-reopen { right: 12px; bottom: 12px; }
       .panel { right: 12px; bottom: 12px; width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 145px); }
       .panel.power-mode { width: min(560px, calc(100vw - 24px)); }
       .power-controls { gap: 0 10px; }
@@ -634,12 +690,13 @@
     <div class="live" id="surfaceSideReadout">Lunar surface · Near side</div>
   </header>
 
-  <aside class="orbit-card" aria-label="Schematic orbital positions of the Sun, Earth, and Moon">
+  <aside class="orbit-card" id="orbitCard" aria-label="Schematic orbital positions of the Sun, Earth, and Moon">
     <div class="orbit-card-heading">
       <span>Orbital positions</span>
-      <span>Not to scale</span>
+      <span class="orbit-scale">Not to scale</span>
+      <button class="widget-toggle" id="hideOrbitButton" type="button" aria-controls="orbitCard" aria-expanded="true" aria-label="Hide orbital positions">Hide</button>
     </div>
-    <svg class="orbit-diagram" viewBox="0 0 204 94" role="img" aria-label="Sun, Earth, and Moon positions in orbit">
+    <svg class="orbit-diagram" id="orbitDiagram" viewBox="0 0 204 94" role="img" aria-label="Sun, Earth, and Moon positions in orbit">
       <circle class="orbit-path" cx="92" cy="48" r="31"></circle>
       <circle id="moonOrbit" class="orbit-path" cx="132" cy="48" r="14"></circle>
       <line id="sunEarthLine" class="orbit-connector" x1="92" y1="48" x2="123" y2="48"></line>
@@ -653,6 +710,7 @@
       <text class="orbit-caption" x="7" y="89">Angles follow the current date · distances compressed</text>
     </svg>
   </aside>
+  <button class="widget-reopen orbit-reopen" id="showOrbitButton" type="button" aria-controls="orbitCard" aria-expanded="true" hidden>Show orbital positions</button>
 
   <section class="compass" aria-label="View direction">
     <div class="compass-icon">N</div>
@@ -662,10 +720,13 @@
 
   <div class="hint">DRAG OR ARROWS TO LOOK <span>·</span> SCROLL TO ZOOM</div>
 
-  <section class="panel" aria-label="Lunar sky controls">
+  <section class="panel" id="controlPanel" aria-label="Lunar sky controls">
     <div class="panel-heading">
       <div class="eyebrow" id="panelTitle">Set your vantage point</div>
-      <span class="eyebrow">UTC</span>
+      <div class="panel-heading-actions">
+        <span class="eyebrow">UTC</span>
+        <button class="widget-toggle" id="hidePanelButton" type="button" aria-controls="controlPanel" aria-expanded="true" aria-label="Hide vantage point controls">Hide</button>
+      </div>
     </div>
     <div class="tabs" role="tablist" aria-label="Visualizer views">
       <button class="tab" id="skyTabButton" type="button" role="tab" aria-selected="true" aria-controls="skyTab">Sky view</button>
@@ -796,6 +857,7 @@
       <div class="model-note">Hourly direct-beam estimate over the selected 29.5-day window. Tilt and azimuth set the panel normal; losses are applied as a simple percentage. Terrain shadows, degradation, temperature, storage, and load are not modeled.</div>
     </div>
   </section>
+  <button class="widget-reopen panel-reopen" id="showPanelButton" type="button" aria-controls="controlPanel" aria-expanded="true" hidden>Show vantage point</button>
 
   <script>
     (() => {
@@ -827,6 +889,11 @@
       const headingReadout = document.querySelector("#headingReadout");
       const resetButton = document.querySelector("#resetView");
       const panel = document.querySelector(".panel");
+      const orbitCard = document.querySelector("#orbitCard");
+      const hideOrbitButton = document.querySelector("#hideOrbitButton");
+      const showOrbitButton = document.querySelector("#showOrbitButton");
+      const hidePanelButton = document.querySelector("#hidePanelButton");
+      const showPanelButton = document.querySelector("#showPanelButton");
       const panelTitle = document.querySelector("#panelTitle");
       const skyTabButton = document.querySelector("#skyTabButton");
       const powerTabButton = document.querySelector("#powerTabButton");
@@ -1813,14 +1880,43 @@
         ctx.drawImage(terrainTexture, 0, 0, width, height);
       }
 
-      function drawEarth(earth) {
-        if (earth.alt <= -1) return;
+      function drawEarth(earth, sun) {
+        if (earth.alt + earth.angularRadius <= 0) return;
         const point = project(earth.az, earth.alt);
         if (!point || point.x < -80 || point.x > width + 80 || point.y < -80 || point.y > height + 80) return;
-        const radius = Math.max(5, point.scale * Math.tan(radians(earth.angularRadius)));
+        const radius = Math.max(0.8, point.scale * Math.tan(radians(earth.angularRadius)));
+        const earthAzimuth = radians(earth.az);
+        const earthAltitude = radians(earth.alt);
+        const sunAzimuth = radians(sun.az);
+        const sunAltitude = radians(sun.alt);
+        const earthDirection = [
+          Math.sin(earthAzimuth) * Math.cos(earthAltitude),
+          Math.cos(earthAzimuth) * Math.cos(earthAltitude),
+          Math.sin(earthAltitude)
+        ];
+        const sunDirection = [
+          Math.sin(sunAzimuth) * Math.cos(sunAltitude),
+          Math.cos(sunAzimuth) * Math.cos(sunAltitude),
+          Math.sin(sunAltitude)
+        ];
+        const directionDot = earthDirection[0] * sunDirection[0]
+          + earthDirection[1] * sunDirection[1]
+          + earthDirection[2] * sunDirection[2];
+        const illuminatedFraction = Math.max(0, Math.min(1, (1 - directionDot) / 2));
+        const terminatorFactor = 2 * illuminatedFraction - 1;
+        const lightEast = sunDirection[0] - directionDot * earthDirection[0];
+        const lightNorth = sunDirection[1] - directionDot * earthDirection[1];
+        const lightUp = sunDirection[2] - directionDot * earthDirection[2];
+        const cameraYaw = radians(yaw);
+        const cameraPitch = radians(pitch);
+        const screenLightX = lightEast * Math.cos(cameraYaw) - lightNorth * Math.sin(cameraYaw);
+        const screenLightY = lightEast * Math.sin(cameraYaw) * Math.sin(cameraPitch)
+          - lightUp * Math.cos(cameraPitch)
+          + lightNorth * Math.cos(cameraYaw) * Math.sin(cameraPitch);
+        const lightAngle = Math.atan2(screenLightY, screenLightX);
 
         const glow = ctx.createRadialGradient(point.x, point.y, radius * 0.65, point.x, point.y, radius * 2.5);
-        glow.addColorStop(0, "rgb(126 181 222 / 25%)");
+        glow.addColorStop(0, "rgb(126 181 222 / 18%)");
         glow.addColorStop(1, "rgb(126 181 222 / 0%)");
         ctx.fillStyle = glow;
         ctx.beginPath();
@@ -1831,10 +1927,15 @@
         ctx.beginPath();
         ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
         ctx.clip();
-        const ocean = ctx.createLinearGradient(point.x - radius, point.y - radius, point.x + radius, point.y + radius);
-        ocean.addColorStop(0, "#b8d7e8");
-        ocean.addColorStop(0.48, "#6094b7");
-        ocean.addColorStop(1, "#315272");
+        const lightX = Math.cos(lightAngle);
+        const lightY = Math.sin(lightAngle);
+        const ocean = ctx.createLinearGradient(
+          point.x - lightX * radius, point.y - lightY * radius,
+          point.x + lightX * radius, point.y + lightY * radius
+        );
+        ocean.addColorStop(0, "#315272");
+        ocean.addColorStop(0.52, "#6094b7");
+        ocean.addColorStop(1, "#b8d7e8");
         ctx.fillStyle = ocean;
         ctx.fillRect(point.x - radius, point.y - radius, radius * 2, radius * 2);
         ctx.fillStyle = "rgb(194 205 177 / 82%)";
@@ -1844,9 +1945,34 @@
         ctx.beginPath();
         ctx.ellipse(point.x + radius * 0.3, point.y + radius * 0.37, radius * 0.12, radius * 0.2, 0.5, 0, Math.PI * 2);
         ctx.fill();
+
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(lightAngle);
+        ctx.beginPath();
+        const step = Math.max(0.35, radius / 10);
+        let firstPoint = true;
+        for (let y = -radius; y <= radius; y += step) {
+          const limb = Math.sqrt(Math.max(0, radius * radius - y * y));
+          const terminator = -terminatorFactor * limb;
+          if (firstPoint) {
+            ctx.moveTo(terminator, y);
+            firstPoint = false;
+          } else {
+            ctx.lineTo(terminator, y);
+          }
+        }
+        for (let y = radius; y >= -radius; y -= step) {
+          const limb = Math.sqrt(Math.max(0, radius * radius - y * y));
+          ctx.lineTo(-limb, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = "rgb(4 7 15 / 78%)";
+        ctx.fill();
         ctx.restore();
-        ctx.strokeStyle = "rgb(226 239 242 / 77%)";
-        ctx.lineWidth = 1;
+        ctx.restore();
+        ctx.strokeStyle = "rgb(167 208 226 / 58%)";
+        ctx.lineWidth = Math.max(0.35, radius * 0.08);
         ctx.beginPath();
         ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
         ctx.stroke();
@@ -1855,23 +1981,23 @@
       }
 
       function drawSun(sun) {
-        if (sun.alt <= -1) return;
+        if (sun.alt + sun.angularRadius <= 0) return;
         const point = project(sun.az, sun.alt);
         if (!point || point.x < -100 || point.x > width + 100 || point.y < -100 || point.y > height + 100) return;
-        const radius = Math.max(4, point.scale * Math.tan(radians(sun.angularRadius)));
-        const glow = ctx.createRadialGradient(point.x, point.y, radius, point.x, point.y, radius * 11);
-        glow.addColorStop(0, "rgb(255 222 167 / 39%)");
-        glow.addColorStop(0.18, "rgb(249 204 143 / 18%)");
+        const radius = Math.max(0.8, point.scale * Math.tan(radians(sun.angularRadius)));
+        const glow = ctx.createRadialGradient(point.x, point.y, radius, point.x, point.y, radius * 3);
+        glow.addColorStop(0, "rgb(255 240 199 / 15%)");
+        glow.addColorStop(0.18, "rgb(249 218 162 / 8%)");
         glow.addColorStop(1, "rgb(249 204 143 / 0%)");
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, radius * 11, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, radius * 3, 0, Math.PI * 2);
         ctx.fill();
 
         const disk = ctx.createRadialGradient(point.x - radius * 0.3, point.y - radius * 0.35, 0, point.x, point.y, radius);
-        disk.addColorStop(0, "#fff8df");
-        disk.addColorStop(0.6, "#f7d99d");
-        disk.addColorStop(1, "#eebd72");
+        disk.addColorStop(0, "#fffdf2");
+        disk.addColorStop(0.65, "#fff0c1");
+        disk.addColorStop(1, "#f6d88c");
         ctx.fillStyle = disk;
         ctx.beginPath();
         ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
@@ -1966,7 +2092,7 @@
         drawSky(positions);
         if (positions) {
           drawSun(positions.sun);
-          drawEarth(positions.earth);
+          drawEarth(positions.earth, positions.sun);
         }
         drawGround();
         updateReadouts(positions);
@@ -2112,6 +2238,27 @@
 
       resetButton.addEventListener("click", () => {
         resetView();
+      });
+
+      function setWidgetVisibility(widget, hideButton, showButton, visible) {
+        widget.hidden = !visible;
+        hideButton.setAttribute("aria-expanded", String(visible));
+        showButton.setAttribute("aria-expanded", String(visible));
+        showButton.hidden = visible;
+        (visible ? hideButton : showButton).focus();
+      }
+
+      hideOrbitButton.addEventListener("click", () => {
+        setWidgetVisibility(orbitCard, hideOrbitButton, showOrbitButton, false);
+      });
+      showOrbitButton.addEventListener("click", () => {
+        setWidgetVisibility(orbitCard, hideOrbitButton, showOrbitButton, true);
+      });
+      hidePanelButton.addEventListener("click", () => {
+        setWidgetVisibility(panel, hidePanelButton, showPanelButton, false);
+      });
+      showPanelButton.addEventListener("click", () => {
+        setWidgetVisibility(panel, hidePanelButton, showPanelButton, true);
       });
 
       window.addEventListener("resize", resize);
